@@ -19,6 +19,7 @@ package etcdmanager
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
@@ -35,6 +36,7 @@ import (
 	"k8s.io/kops/upup/pkg/fi"
 	"k8s.io/kops/upup/pkg/fi/cloudup/aliup"
 	"k8s.io/kops/upup/pkg/fi/cloudup/awsup"
+	"k8s.io/kops/upup/pkg/fi/cloudup/azure"
 	"k8s.io/kops/upup/pkg/fi/cloudup/do"
 	"k8s.io/kops/upup/pkg/fi/cloudup/gce"
 	"k8s.io/kops/upup/pkg/fi/cloudup/openstack"
@@ -170,7 +172,7 @@ metadata:
   namespace: kube-system
 spec:
   containers:
-  - image: kopeio/etcd-manager:3.0.20201117
+  - image: %s
     name: etcd-manager
     resources:
       requests:
@@ -207,7 +209,12 @@ func (b *EtcdManagerBuilder) buildPod(etcdCluster kops.EtcdClusterSpec) (*v1.Pod
 
 	// TODO: pull from bundle
 	bundle := "(embedded etcd manifest)"
-	manifest = []byte(defaultManifest)
+
+	img := os.Getenv("ETCD_MANAGER_IMAGE")
+	if img == "" {
+		img = "kopeio/etcd-manager:3.0.20201117"
+	}
+	manifest = []byte(fmt.Sprintf(defaultManifest, img))
 
 	{
 		objects, err := model.ParseManifest(manifest)
@@ -347,11 +354,11 @@ func (b *EtcdManagerBuilder) buildPod(etcdCluster kops.EtcdClusterSpec) (*v1.Pod
 		// TODO: We need to wire these into the etcd-manager spec
 		// // add timeout/heartbeat settings
 		if etcdCluster.LeaderElectionTimeout != nil {
-			// 	envs = append(envs, v1.EnvVar{Name: "ETCD_ELECTION_TIMEOUT", Value: convEtcdSettingsToMs(etcdClusterSpec.LeaderElectionTimeout)})
+			//      envs = append(envs, v1.EnvVar{Name: "ETCD_ELECTION_TIMEOUT", Value: convEtcdSettingsToMs(etcdClusterSpec.LeaderElectionTimeout)})
 			return nil, fmt.Errorf("LeaderElectionTimeout not supported by etcd-manager")
 		}
 		if etcdCluster.HeartbeatInterval != nil {
-			// 	envs = append(envs, v1.EnvVar{Name: "ETCD_HEARTBEAT_INTERVAL", Value: convEtcdSettingsToMs(etcdClusterSpec.HeartbeatInterval)})
+			//      envs = append(envs, v1.EnvVar{Name: "ETCD_HEARTBEAT_INTERVAL", Value: convEtcdSettingsToMs(etcdClusterSpec.HeartbeatInterval)})
 			return nil, fmt.Errorf("HeartbeatInterval not supported by etcd-manager")
 		}
 	}
@@ -377,6 +384,18 @@ func (b *EtcdManagerBuilder) buildPod(etcdCluster kops.EtcdClusterSpec) (*v1.Pod
 				aliup.TagNameRolePrefix + "master=1",
 			}
 			config.VolumeNameTag = aliup.TagNameEtcdClusterPrefix + etcdCluster.Name
+
+		case kops.CloudProviderAzure:
+			config.VolumeProvider = "azure"
+
+			config.VolumeTag = []string{
+				// Use dash (_) as a splitter. Other CSPs use slash (/), but slash is not
+				// allowed as a tag key in Azure.
+				fmt.Sprintf("kubernetes.io_cluster_%s=owned", b.Cluster.Name),
+				azure.TagNameEtcdClusterPrefix + etcdCluster.Name,
+				azure.TagNameRolePrefix + "master=1",
+			}
+			config.VolumeNameTag = azure.TagNameEtcdClusterPrefix + etcdCluster.Name
 
 		case kops.CloudProviderGCE:
 			config.VolumeProvider = "gce"

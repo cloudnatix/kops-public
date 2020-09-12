@@ -48,6 +48,7 @@ go_library(
         "//pkg/model:go_default_library",
         "//pkg/model/alimodel:go_default_library",
         "//pkg/model/awsmodel:go_default_library",
+        "//pkg/model/azuremodel:go_default_library",
         "//pkg/model/components:go_default_library",
         "//pkg/model/components/addonmanifests:go_default_library",
         "//pkg/model/components/addonmanifests/dnscontroller:go_default_library",
@@ -69,6 +70,7 @@ go_library(
         "//upup/pkg/fi/assettasks:go_default_library",
         "//upup/pkg/fi/cloudup/aliup:go_default_library",
         "//upup/pkg/fi/cloudup/awsup:go_default_library",
+        "//upup/pkg/fi/cloudup/azure:go_default_library",
         "//upup/pkg/fi/cloudup/cloudformation:go_default_library",
         "//upup/pkg/fi/cloudup/do:go_default_library",
         "//upup/pkg/fi/cloudup/gce:go_default_library",
@@ -97,7 +99,6 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    size = "small",
     srcs = [
         "bootstrapchannelbuilder_test.go",
         "containerd_test.go",
@@ -113,9 +114,6 @@ go_test(
         "template_functions_test.go",
         "urls_test.go",
         "validation_test.go",
-    ],
-    data = [
-        "//upup/pkg/fi/cloudup/tests:exported_testdata",  # keep
     ],
     embed = [":go_default_library"],
     deps = [

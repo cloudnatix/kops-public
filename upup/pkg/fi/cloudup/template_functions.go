@@ -109,6 +109,13 @@ func (tf *TemplateFunctions) AddTo(dest template.FuncMap, secretStore fi.SecretS
 		return fmt.Sprintf("%d", wellknownports.NodeLocalDNSHealthCheck)
 	}
 
+	dest["KopsControllerImage"] = func() string {
+		img := os.Getenv("KOPS_CONTROLLER_IMAGE")
+		if img != "" {
+			return img
+		}
+		return "k8s.gcr.io/kops/kops-controller:1.19.0-beta.2"
+	}
 	dest["KopsControllerArgv"] = tf.KopsControllerArgv
 	dest["KopsControllerConfig"] = tf.KopsControllerConfig
 	dest["DnsControllerArgv"] = tf.DNSControllerArgv

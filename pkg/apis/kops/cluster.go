@@ -199,6 +199,9 @@ type ClusterSpec struct {
 
 	// ClusterAutoscaler defines the cluster autoscaler configuration.
 	ClusterAutoscaler *ClusterAutoscalerConfig `json:"clusterAutoscaler,omitempty"`
+
+	// Azure specifies the configuration specific to Azure.
+	Azure *AzureSpec `json:"azure,omitempty"`
 }
 
 // NodeAuthorizationSpec is used to node authorization
@@ -704,6 +707,20 @@ func (c *Cluster) IsKubernetesLT(version string) bool {
 	return !c.IsKubernetesGTE(version)
 }
 
+// IsSharedAzureResourceGroup returns true if the resource group is shared.
+func (c *Cluster) IsSharedAzureResourceGroup() bool {
+	return c.Spec.Azure.ResourceGroupName != ""
+}
+
+// AzureResourceGroupName returns the name of the resource group where the cluster is built.
+func (c *Cluster) AzureResourceGroupName() string {
+	r := c.Spec.Azure.ResourceGroupName
+	if r != "" {
+		return r
+	}
+	return c.Name
+}
+
 // EnvVar represents an environment variable present in a Container.
 type EnvVar struct {
 	// Name of the environment variable. Must be a C_IDENTIFIER.
@@ -765,4 +782,24 @@ type RollingUpdate struct {
 	// nodes.
 	// +optional
 	MaxSurge *intstr.IntOrString `json:"maxSurge,omitempty"`
+}
+
+// AzureSpec defines Azure specific cluster configuration.
+type AzureSpec struct {
+	// SubscriptionID specifies the subscription used for the cluster installation.
+	SubscriptionID string `json:"subscriptionId,omitempty"`
+	// TenantID is the ID of the tenant that the cluster is deployed in.
+	TenantID string `json:"tenantId"`
+	// ResourceGroupName specifies the name of the resource group
+	// where the cluster is built.
+	// If this is empty, kops will create a new resource group
+	// whose name is same as the cluster name. If this is not
+	// empty, kops will not create a new resource group, and
+	// it will just reuse the existing resource group of the name.
+	// This follows the model that kops takes for AWS VPC.
+	ResourceGroupName string `json:"resourceGroupName,omitempty"`
+	// RouteTableName is the name of the route table attached to the subnet that the cluster is deployed in.
+	RouteTableName string `json:"routeTableName,omitempty"`
+	// AdminUser specifies the admin user of VMs.
+	AdminUser string `json:"adminUser,omitempty"`
 }

@@ -86,6 +86,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "cloudconfig_test.go",
         "containerd_test.go",
         "docker_test.go",
         "kube_apiserver_test.go",

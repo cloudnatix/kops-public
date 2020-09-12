@@ -252,6 +252,7 @@ const (
 	CloudProviderGCE       CloudProviderID = "gce"
 	CloudProviderOpenstack CloudProviderID = "openstack"
 	CloudProviderVSphere   CloudProviderID = "vsphere"
+	CloudProviderAzure     CloudProviderID = "azure"
 )
 
 // FindImage returns the image for the cloudprovider, or nil if none found

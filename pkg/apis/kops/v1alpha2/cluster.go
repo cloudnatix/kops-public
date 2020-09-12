@@ -191,6 +191,8 @@ type ClusterSpec struct {
 	RollingUpdate *RollingUpdate `json:"rollingUpdate,omitempty"`
 	// GCEServiceAccount specifies the service account with which the GCE VM runs
 	GCEServiceAccount string `json:"gceServiceAccount,omitempty"`
+	// Azure specifies the configuration specific to Azure.
+	Azure *AzureSpec `json:"azure,omitempty"`
 }
 
 // NodeAuthorizationSpec is used to node authorization
@@ -619,4 +621,21 @@ type RollingUpdate struct {
 	// nodes.
 	// +optional
 	MaxSurge *intstr.IntOrString `json:"maxSurge,omitempty"`
+}
+
+// AzureSpec defines Azure specific cluster configuration.
+type AzureSpec struct {
+	// SubscriptionID specifies the subscription used for the cluster installation.
+	SubscriptionID string `json:"subscriptionId,omitempty"`
+	// TenantID is the ID of the tenant that the cluster is deployed in.
+	TenantID string `json:"tenantId"`
+	// ResourceGroupName specifies the name of the resource group
+	// where the cluster is built.
+	ResourceGroupName string `json:"resourceGroupName,omitempty"`
+	// RouteTableName is the name of the route table attached to the subnet that the cluster is deployed in.
+	RouteTableName string `json:"routeTableName,omitempty"`
+	// VnetName is the name of the virutla network that the cluster is deployed in.
+	VnetName string `json:"vnetName"`
+	// AdminUser specifies the admin user of VMs.
+	AdminUser string `json:"adminUser,omitempty"`
 }

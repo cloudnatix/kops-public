@@ -94,6 +94,7 @@ k8s.io/kops/pkg/kubemanifest
 k8s.io/kops/pkg/model
 k8s.io/kops/pkg/model/alimodel
 k8s.io/kops/pkg/model/awsmodel
+k8s.io/kops/pkg/model/azuremodel
 k8s.io/kops/pkg/model/components
 k8s.io/kops/pkg/model/components/etcdmanager
 k8s.io/kops/pkg/model/components/node-authorizer
@@ -107,6 +108,7 @@ k8s.io/kops/pkg/model/spotinstmodel
 k8s.io/kops/pkg/model/vspheremodel
 k8s.io/kops/pkg/nodeidentity
 k8s.io/kops/pkg/nodeidentity/aws
+k8s.io/kops/pkg/nodeidentity/azure
 k8s.io/kops/pkg/nodeidentity/do
 k8s.io/kops/pkg/nodeidentity/gce
 k8s.io/kops/pkg/nodeidentity/openstack
@@ -117,6 +119,7 @@ k8s.io/kops/pkg/rbac
 k8s.io/kops/pkg/resources
 k8s.io/kops/pkg/resources/ali
 k8s.io/kops/pkg/resources/aws
+k8s.io/kops/pkg/resources/azure
 k8s.io/kops/pkg/resources/digitalocean
 k8s.io/kops/pkg/resources/digitalocean/dns
 k8s.io/kops/pkg/resources/gce
@@ -143,6 +146,7 @@ k8s.io/kops/protokube/pkg/etcd
 k8s.io/kops/protokube/pkg/gossip
 k8s.io/kops/protokube/pkg/gossip/ali
 k8s.io/kops/protokube/pkg/gossip/aws
+k8s.io/kops/protokube/pkg/gossip/azure
 k8s.io/kops/protokube/pkg/gossip/dns
 k8s.io/kops/protokube/pkg/gossip/dns/hosts
 k8s.io/kops/protokube/pkg/gossip/dns/provider
@@ -166,6 +170,8 @@ k8s.io/kops/upup/pkg/fi/cloudup/alitasks
 k8s.io/kops/upup/pkg/fi/cloudup/aliup
 k8s.io/kops/upup/pkg/fi/cloudup/awstasks
 k8s.io/kops/upup/pkg/fi/cloudup/awsup
+k8s.io/kops/upup/pkg/fi/cloudup/azure
+k8s.io/kops/upup/pkg/fi/cloudup/azuretasks
 k8s.io/kops/upup/pkg/fi/cloudup/baremetal
 k8s.io/kops/upup/pkg/fi/cloudup/cloudformation
 k8s.io/kops/upup/pkg/fi/cloudup/dnstasks

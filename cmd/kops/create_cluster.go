@@ -52,6 +52,7 @@ import (
 	"k8s.io/kops/upup/pkg/fi/cloudup"
 	"k8s.io/kops/upup/pkg/fi/cloudup/aliup"
 	"k8s.io/kops/upup/pkg/fi/cloudup/awsup"
+	"k8s.io/kops/upup/pkg/fi/cloudup/azure"
 	"k8s.io/kops/upup/pkg/fi/cloudup/gce"
 	"k8s.io/kops/upup/pkg/fi/cloudup/openstack"
 	"k8s.io/kops/upup/pkg/fi/utils"
@@ -164,6 +165,12 @@ type CreateClusterOptions struct {
 
 	// GCEServiceAccount specifies the service account with which the GCE VM runs
 	GCEServiceAccount string
+
+	AzureSubscriptionID    string
+	AzureTenantID          string
+	AzureResourceGroupName string
+	AzureRouteTableName    string
+	AzureAdminUser         string
 
 	// ConfigBase is the location where we will store the configuration, it defaults to the state store
 	ConfigBase string
@@ -381,6 +388,13 @@ func NewCmdCreateCluster(f *util.Factory, out io.Writer) *cobra.Command {
 	// GCE flags
 	cmd.Flags().StringVar(&options.Project, "project", options.Project, "Project to use (must be set on GCE)")
 	cmd.Flags().StringVar(&options.GCEServiceAccount, "gce-service-account", options.GCEServiceAccount, "Service account with which the GCE VM runs. Warning: if not set, VMs will run as default compute service account.")
+
+	// Azure flags
+	cmd.Flags().StringVar(&options.AzureSubscriptionID, "azure-subscription-id", options.AzureSubscriptionID, "Azure subscription where a k8s cluster is created.")
+	cmd.Flags().StringVar(&options.AzureTenantID, "azure-tenant-id", options.AzureTenantID, "Azure tenant where a k8s cluster is created.")
+	cmd.Flags().StringVar(&options.AzureResourceGroupName, "azure-resource-group-name", options.AzureResourceGroupName, "Azure resource group name where a k8s cluster is created.")
+	cmd.Flags().StringVar(&options.AzureRouteTableName, "azure-route-table-name", options.AzureRouteTableName, "Azure route table name where a k8s cluster is created.")
+	cmd.Flags().StringVar(&options.AzureAdminUser, "azure-admin-user", options.AzureAdminUser, "Azure admin user of VM ScaleSet.")
 
 	if featureflag.VSphereCloudProvider.Enabled() {
 		// vSphere flags
@@ -658,6 +672,27 @@ func RunCreateCluster(ctx context.Context, f *util.Factory, out io.Writer, c *Cr
 			}
 			zoneToSubnetMap[zoneName] = subnet
 		}
+	} else if api.CloudProviderID(cluster.Spec.CloudProvider) == api.CloudProviderAzure {
+		// On Azure, subnets are regional - we create one per region, not per zone
+		for _, zoneName := range allZones.List() {
+			location, err := azure.ZoneToLocation(zoneName)
+			if err != nil {
+				return err
+			}
+
+			// We create default subnets named the same as the regions
+			subnetName := location
+
+			subnet := model.FindSubnet(cluster, subnetName)
+			if subnet == nil {
+				subnet = &api.ClusterSubnetSpec{
+					Name:   subnetName,
+					Region: location,
+				}
+				cluster.Spec.Subnets = append(cluster.Spec.Subnets, *subnet)
+			}
+			zoneToSubnetMap[zoneName] = subnet
+		}
 	} else {
 		var zoneToSubnetProviderID map[string]string
 		if len(c.Zones) > 0 && len(c.SubnetIDs) > 0 {
@@ -762,7 +797,7 @@ func RunCreateCluster(ctx context.Context, f *util.Factory, out io.Writer, c *Cr
 			}
 
 			g.Spec.Subnets = []string{subnet.Name}
-			if api.CloudProviderID(cluster.Spec.CloudProvider) == api.CloudProviderGCE {
+			if cp := api.CloudProviderID(cluster.Spec.CloudProvider); cp == api.CloudProviderGCE || cp == api.CloudProviderAzure {
 				g.Spec.Zones = []string{zone}
 			}
 
@@ -853,7 +888,7 @@ func RunCreateCluster(ctx context.Context, f *util.Factory, out io.Writer, c *Cr
 		}
 		g.Spec.Subnets = subnetNames.List()
 
-		if api.CloudProviderID(cluster.Spec.CloudProvider) == api.CloudProviderGCE {
+		if cp := api.CloudProviderID(cluster.Spec.CloudProvider); cp == api.CloudProviderGCE || cp == api.CloudProviderAzure {
 			g.Spec.Zones = c.Zones
 		}
 
@@ -968,6 +1003,13 @@ func RunCreateCluster(ctx context.Context, f *util.Factory, out io.Writer, c *Cr
 			cluster.Spec.CloudConfig.VSphereDatastore = fi.String(c.VSphereDatastore)
 		}
 
+		if c.Cloud == string(api.CloudProviderAzure) {
+			// Creating an empty CloudConfig so that --cloud-config is passed to kubelet, api-server, etc.
+			if cluster.Spec.CloudConfig == nil {
+				cluster.Spec.CloudConfig = &api.CloudConfiguration{}
+			}
+		}
+
 		if featureflag.Spotinst.Enabled() {
 			if cluster.Spec.CloudConfig == nil {
 				cluster.Spec.CloudConfig = &api.CloudConfiguration{}
@@ -1007,6 +1049,16 @@ func RunCreateCluster(ctx context.Context, f *util.Factory, out io.Writer, c *Cr
 			klog.Warning("VMs will be configured to use the GCE default compute Service Account! This is an anti-pattern")
 			klog.Warning("Use a pre-create Service Account with the flag: --gce-service-account=account@projectname.iam.gserviceaccount.com")
 			cluster.Spec.GCEServiceAccount = "default"
+		}
+	}
+
+	if api.CloudProviderID(cluster.Spec.CloudProvider) == api.CloudProviderAzure {
+		cluster.Spec.Azure = &api.AzureSpec{
+			SubscriptionID:    c.AzureSubscriptionID,
+			TenantID:          c.AzureTenantID,
+			ResourceGroupName: c.AzureResourceGroupName,
+			RouteTableName:    c.AzureRouteTableName,
+			AdminUser:         c.AzureAdminUser,
 		}
 	}
 
@@ -1225,6 +1277,10 @@ func RunCreateCluster(ctx context.Context, f *util.Factory, out io.Writer, c *Cr
 	if cluster.Spec.API.IsEmpty() {
 		if c.Cloud == "openstack" {
 			initializeOpenstackAPI(c, cluster)
+		} else if c.Cloud == "azure" {
+			// Do nothing to disable the use of loadbalancer for the k8s API server.
+			// TODO(kenji): Remove this condition once we support the loadbalancer
+			// in pkg/model/azuremodel/api_loadbalancer.go.
 		} else if c.APILoadBalancerType != "" {
 			cluster.Spec.API.LoadBalancer = &api.LoadBalancerAccessSpec{}
 		} else {

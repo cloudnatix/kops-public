@@ -46,7 +46,7 @@ spec:
       serviceAccount: kops-controller
       containers:
       - name: kops-controller
-        image: kope/kops-controller:1.18.0-alpha.2
+        image: {{ KopsControllerImage }}
         volumeMounts:
 {{ if .UseHostCertificates }}
         - mountPath: /etc/ssl/certs

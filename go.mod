@@ -50,6 +50,12 @@ replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud
 
 require (
 	cloud.google.com/go v0.38.0
+	github.com/Azure/azure-pipeline-go v0.2.3
+	github.com/Azure/azure-sdk-for-go v46.1.0+incompatible
+	github.com/Azure/azure-storage-blob-go v0.10.0
+	github.com/Azure/go-autorest/autorest v0.11.6
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.2
+	github.com/Azure/go-autorest/autorest/to v0.2.0
 	github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd
 	github.com/Masterminds/semver v1.3.1 // indirect
 	github.com/Masterminds/sprig v2.17.1+incompatible
@@ -73,6 +79,7 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.3
+	github.com/google/uuid v1.1.1
 	github.com/gophercloud/gophercloud v0.7.1-0.20200116011225-46fdd1830e9a
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/hcl v1.0.0
@@ -99,7 +106,7 @@ require (
 	github.com/weaveworks/mesh v0.0.0-20170419100114-1f158d31de55
 	github.com/zclconf/go-cty v1.3.1
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9
 	golang.org/x/tools v0.0.0-20191203134012-c197fd4bf371

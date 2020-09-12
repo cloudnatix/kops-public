@@ -20,22 +20,26 @@ import (
 	"fmt"
 
 	"k8s.io/kops/pkg/apis/kops"
+	kopsapi "k8s.io/kops/pkg/apis/kops"
 	"k8s.io/kops/pkg/resources"
 	"k8s.io/kops/pkg/resources/ali"
 	"k8s.io/kops/pkg/resources/aws"
+	"k8s.io/kops/pkg/resources/azure"
 	"k8s.io/kops/pkg/resources/digitalocean"
 	"k8s.io/kops/pkg/resources/gce"
 	"k8s.io/kops/pkg/resources/openstack"
 	"k8s.io/kops/upup/pkg/fi"
 	cloudali "k8s.io/kops/upup/pkg/fi/cloudup/aliup"
 	"k8s.io/kops/upup/pkg/fi/cloudup/awsup"
+	cloudazure "k8s.io/kops/upup/pkg/fi/cloudup/azure"
 	cloudgce "k8s.io/kops/upup/pkg/fi/cloudup/gce"
 	cloudopenstack "k8s.io/kops/upup/pkg/fi/cloudup/openstack"
 	"k8s.io/kops/upup/pkg/fi/cloudup/vsphere"
 )
 
 // ListResources collects the resources from the specified cloud
-func ListResources(cloud fi.Cloud, clusterName string, region string) (map[string]*resources.Resource, error) {
+func ListResources(cloud fi.Cloud, cluster *kopsapi.Cluster, region string) (map[string]*resources.Resource, error) {
+	clusterName := cluster.Name
 	switch cloud.ProviderID() {
 	case kops.CloudProviderAWS:
 		return aws.ListResourcesAWS(cloud.(awsup.AWSCloud), clusterName)
@@ -49,6 +53,8 @@ func ListResources(cloud fi.Cloud, clusterName string, region string) (map[strin
 		return resources.ListResourcesVSphere(cloud.(*vsphere.VSphereCloud), clusterName)
 	case kops.CloudProviderALI:
 		return ali.ListResourcesALI(cloud.(cloudali.ALICloud), clusterName, region)
+	case kops.CloudProviderAzure:
+		return azure.ListResourcesAzure(cloud.(cloudazure.AzureCloud), clusterName, cluster.Spec.Azure.ResourceGroupName)
 	default:
 		return nil, fmt.Errorf("delete on clusters on %q not (yet) supported", cloud.ProviderID())
 	}

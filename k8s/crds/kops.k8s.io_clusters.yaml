@@ -184,6 +184,36 @@ spec:
                   rbac:
                     type: object
                 type: object
+              azure:
+                description: Azure specifies the configuration specific to Azure.
+                properties:
+                  adminUser:
+                    description: AdminUser specifies the admin user of VMs.
+                    type: string
+                  resourceGroupName:
+                    description: ResourceGroupName specifies the name of the resource
+                      group where the cluster is built.
+                    type: string
+                  routeTableName:
+                    description: RouteTableName is the name of the route table attached
+                      to the subnet that the cluster is deployed in.
+                    type: string
+                  subscriptionId:
+                    description: SubscriptionID specifies the subscription used for
+                      the cluster installation.
+                    type: string
+                  tenantId:
+                    description: TenantID is the ID of the tenant that the cluster
+                      is deployed in.
+                    type: string
+                  vnetName:
+                    description: VnetName is the name of the virutla network that
+                      the cluster is deployed in.
+                    type: string
+                required:
+                - tenantId
+                - vnetName
+                type: object
               channel:
                 description: The Channel we are following
                 type: string

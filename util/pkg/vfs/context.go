@@ -48,7 +48,8 @@ type VFSContext struct {
 	// swiftClient is the openstack swift client
 	swiftClient *gophercloud.ServiceClient
 	// ossClient is the Aliyun Open Source Storage client
-	ossClient *oss.Client
+	ossClient   *oss.Client
+	azureClient *azureClient
 }
 
 var Context = VFSContext{
@@ -164,6 +165,10 @@ func (c *VFSContext) BuildVfsPath(p string) (Path, error) {
 
 	if strings.HasPrefix(p, "oss://") {
 		return c.buildOSSPath(p)
+	}
+
+	if strings.HasPrefix(p, azureBlobSchema+"://") {
+		return c.buildAzureBlobPath(p)
 	}
 
 	return nil, fmt.Errorf("unknown / unhandled path type: %q", p)
@@ -421,4 +426,43 @@ func (c *VFSContext) buildOSSPath(p string) (*OSSPath, error) {
 	}
 
 	return NewOSSPath(c.ossClient, bucket, u.Path)
+}
+
+func (c *VFSContext) buildAzureBlobPath(p string) (*AzureBlobPath, error) {
+	u, err := url.Parse(p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %q: %s", p, err)
+	}
+
+	if u.Scheme != azureBlobSchema {
+		return nil, fmt.Errorf("invalid Azure Blob schem: %q", p)
+	}
+
+	container := strings.TrimSuffix(u.Host, "/")
+	if container == "" {
+		return nil, fmt.Errorf("no container specified: %q", p)
+	}
+
+	client, err := c.getAzureBlobClient()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewAzureBlobPath(client, container, u.Path), nil
+}
+
+func (c *VFSContext) getAzureBlobClient() (*azureClient, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.azureClient != nil {
+		return c.azureClient, nil
+	}
+
+	client, err := newAzureClient()
+	if err != nil {
+		return nil, err
+	}
+	c.azureClient = client
+	return client, nil
 }

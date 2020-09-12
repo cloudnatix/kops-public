@@ -112,6 +112,13 @@ func (tf *TemplateFunctions) AddTo(dest template.FuncMap, secretStore fi.SecretS
 		}
 	}
 
+	dest["KopsControllerImage"] = func() string {
+		img := os.Getenv("KOPS_CONTROLLER_IMAGE")
+		if img != "" {
+			return img
+		}
+		return "kope/kops-controller:1.18.0-alpha.2"
+	}
 	dest["KopsControllerArgv"] = tf.KopsControllerArgv
 	dest["KopsControllerConfig"] = tf.KopsControllerConfig
 	dest["DnsControllerArgv"] = tf.DnsControllerArgv

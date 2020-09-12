@@ -36,19 +36,23 @@ const (
 	defaultNodeMachineTypeVSphere = "vsphere_node"
 	defaultNodeMachineTypeDO      = "s-2vcpu-4gb"
 	defaultNodeMachineTypeALI     = "ecs.n2.medium"
+	defaultNodeMachineTypeAzure   = "Standard_B2ms"
 
 	defaultBastionMachineTypeGCE     = "f1-micro"
 	defaultBastionMachineTypeVSphere = "vsphere_bastion"
 	defaultBastionMachineTypeALI     = "ecs.n2.small"
+	defaultBastionMachineTypeAzure   = "Standard_B2ms"
 
 	defaultMasterMachineTypeGCE     = "n1-standard-1"
 	defaultMasterMachineTypeVSphere = "vsphere_master"
 	defaultMasterMachineTypeDO      = "s-2vcpu-2gb"
 	defaultMasterMachineTypeALI     = "ecs.n2.medium"
+	defaultMasterMachineTypeAzure   = "Standard_B2ms"
 
 	defaultVSphereNodeImage = "kops_ubuntu_16_04.ova"
 	defaultDONodeImage      = "coreos-stable"
 	defaultALINodeImage     = "centos_7_04_64_20G_alibase_201701015.vhd"
+	defaultAzureNodeImage   = "Canonical:UbuntuServer:18.04-LTS:latest"
 )
 
 var awsDedicatedInstanceExceptions = map[string]bool{
@@ -231,6 +235,18 @@ func defaultMachineType(cluster *kops.Cluster, ig *kops.InstanceGroup) (string, 
 		case kops.InstanceGroupRoleBastion:
 			return defaultBastionMachineTypeALI, nil
 		}
+
+	case kops.CloudProviderAzure:
+		switch ig.Spec.Role {
+		case kops.InstanceGroupRoleMaster:
+			return defaultMasterMachineTypeAzure, nil
+
+		case kops.InstanceGroupRoleNode:
+			return defaultNodeMachineTypeAzure, nil
+
+		case kops.InstanceGroupRoleBastion:
+			return defaultBastionMachineTypeAzure, nil
+		}
 	}
 
 	klog.V(2).Infof("Cannot set default MachineType for CloudProvider=%q, Role=%q", cluster.Spec.CloudProvider, ig.Spec.Role)
@@ -263,6 +279,8 @@ func defaultImage(cluster *kops.Cluster, channel *kops.Channel) string {
 		return defaultVSphereNodeImage
 	case kops.CloudProviderALI:
 		return defaultALINodeImage
+	case kops.CloudProviderAzure:
+		return defaultAzureNodeImage
 	}
 	klog.Infof("Cannot set default Image for CloudProvider=%q", cluster.Spec.CloudProvider)
 	return ""

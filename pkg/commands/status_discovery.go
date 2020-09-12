@@ -26,6 +26,7 @@ import (
 	"k8s.io/kops/upup/pkg/fi/cloudup/aliup"
 	"k8s.io/kops/upup/pkg/fi/cloudup/awstasks"
 	"k8s.io/kops/upup/pkg/fi/cloudup/awsup"
+	"k8s.io/kops/upup/pkg/fi/cloudup/azure"
 	"k8s.io/kops/upup/pkg/fi/cloudup/gce"
 	"k8s.io/kops/upup/pkg/fi/cloudup/openstack"
 )
@@ -74,6 +75,10 @@ func (s *CloudDiscoveryStatusStore) GetApiIngressStatus(cluster *kops.Cluster) (
 		return ingresses, nil
 	}
 
+	if azureCloud, ok := cloud.(azure.AzureCloud); ok {
+		return azureCloud.GetApiIngressStatus(cluster)
+	}
+
 	if osCloud, ok := cloud.(openstack.OpenstackCloud); ok {
 		return osCloud.GetApiIngressStatus(cluster)
 	}
@@ -102,6 +107,10 @@ func (s *CloudDiscoveryStatusStore) FindClusterStatus(cluster *kops.Cluster) (*k
 
 	if aliCloud, ok := cloud.(aliup.ALICloud); ok {
 		return aliCloud.FindClusterStatus(cluster)
+	}
+
+	if azureCloud, ok := cloud.(azure.AzureCloud); ok {
+		return azureCloud.FindClusterStatus(cluster)
 	}
 
 	if osCloud, ok := cloud.(openstack.OpenstackCloud); ok {
